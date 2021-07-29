@@ -89,7 +89,7 @@ The available types are "Ball" and "Mineral". These names are case sensitive!</p
                 <property name="hscrollbar-policy">never</property>
                 <property name="shadow-type">in</property>
                 <child>
-                  <object class="GtkTextView" id="userInput">
+                  <object class="GtkTextView" id="userInputView">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="is-focus">True</property>
