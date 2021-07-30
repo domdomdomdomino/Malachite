@@ -225,7 +225,7 @@ proc malachite(input: string) =
   echo "Calculating using ", $nThr, " cores.\n"
 
   var 
-    (mf, parts) = nThr.split("particles.txt")
+    (mf, parts) = nThr.split("../particles.txt")
     accs = newSeq[ForceTotal](nThr)
 
   echo "Processing has started, please wait. . ."
