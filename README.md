@@ -7,11 +7,7 @@ collision simulations.
 
 The first step is to install *Nim* using the `sudo apt-get install nim` command on Ubuntu.
 
-Then you must install a dependency called *Gintro*, which adds GTK bindings to
-*Nim*. To install this dependency, you mus use the `nimble install gintro`
-command. **MAKE SURE YOU HAVE GTK INSTALLED**.
-
-After installing the dependencies, you must go to the terminal and use the `cd`
+After installing *Nim*, you must go to the terminal and use the `cd`
 command to get to the `Malachite` directory, then you must input the following
 command to compile the program:
 
@@ -23,6 +19,3 @@ nim c -d:danger --threads:on src/Malachite.nim
 
 To run *Malachite*, you must cd into the `src` directroy and use the `./Malachite` command from the
 terminal.
-
-The instructions on how to use the program itself can be found by hovering the
-mouse over the `<?>` label.
