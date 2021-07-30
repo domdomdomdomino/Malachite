@@ -16,7 +16,7 @@ command to get to the `Malachite` directory, then you must input the following
 command to compile the program:
 
 ``` sh
-nim c -d:danger --threads:on -o:bin/Malachite src/Malachite.nim
+nim c -d:danger --threads:on src/Malachite.nim
 ```
 
 ## Running Malachite
