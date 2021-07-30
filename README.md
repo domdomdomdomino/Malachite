@@ -5,11 +5,11 @@ collision simulations.
 
 ## Compilation
 
-The first step is to install *Nim* using the `sudo apt-get nim` command on Ubuntu.
+The first step is to install *Nim* using the `sudo apt-get install nim` command on Ubuntu.
 
 Then you must install a dependency called *Gintro*, which adds GTK bindings to
 *Nim*. To install this dependency, you mus use the `nimble install gintro`
-command. **MAKE SURE YOU HAVE GTK3 INSTALLED**.
+command. **MAKE SURE YOU HAVE GTK INSTALLED**.
 
 After installing the dependencies, you must go to the terminal and use the `cd`
 command to get to the `Malachite` directory, then you must input the following
