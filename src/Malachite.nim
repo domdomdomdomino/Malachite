@@ -1,7 +1,8 @@
 # Malachite.nim
 
-import std/[osproc, threadpool, strutils, memfiles, os,
+import std/[osproc, threadpool, strutils, os,
             strscans, parseutils, strformat, math, terminal], cblakeutils
+import memfiles except open
 import gintro/[gtk, gobject, gio]
   
 #[ `Test data for original 30GB file`.
@@ -24,6 +25,9 @@ type
     matType: Material
 
   NoMaterialID = object of ValueError # Called when a `None` is found
+
+  NoMatchingEnum = object of ValueError # Called when the user input doesn't
+                                        # match the contents of `Material`
 
   ForceTotal = object
     bbTotal, bmTotal, mmTotal: int
@@ -65,8 +69,15 @@ proc parseInput(input: string): seq[MaterialRange] =
       kind: string
     
     if line.scanf("$i..$i, $+", lowR, highR, kind):
-      let matType = kind.parseEnum[: Material]()
-      let fHighR = 
+      let matType = # kind.parseEnum[: Material]()
+        try:
+          kind.parseEnum[: Material]():
+        except ValueError:
+          echo ">>> Error with the type <<" & kind & ">>."
+          raise newException(NoMatchingEnum,
+                            "The type above doesn't match either 'Ball' or 'Mineral'.\n" &
+                            "Make sure you wrote the type properly.")
+      let fHighR =
         if highR == 0: Inf else: highR.float # Using `0` to represent infinty
       result.add MaterialRange(rng: lowR.float..fHighr, matType: matType)      
 
@@ -140,7 +151,7 @@ proc doLines(acc: ptr ForceTotal, c: int, ms: MemSlice, ranges: seq[MaterialRang
     
     var j = 0'i8                # fill ids & forces
     for col in line.split:
-      if   j in colIds:    ids[j]      = col.parseFloat
+      if j in colIds: ids[j] = col.parseFloat
       elif j in colForces: forces[j+1] = col.parseFloat
       j.inc
 
@@ -200,6 +211,7 @@ proc total(accs: seq[ForceTotal]): ForceTotal =
 proc malachite(input: string) =
   ## Starts the processing based on the input from the user 
   ## and the number of cores of the computer.
+
   let 
     nThr0 = parseInt(getEnv("NT", "0"))
     nThr = if nThr0 == 0: countProcessors() else: nThr0
@@ -254,6 +266,7 @@ proc getData(b: Button, v: TxtWindow) =
   buffer.getBounds(start, ending)
   v.w.destroy()
   let userInput = getText(buffer, start, ending, true)
+  writeFile("last_session.txt", userInput)
   # Run the program
   malachite(userInput)
 
@@ -265,6 +278,15 @@ proc appActivate(app: Application) =
     userInputView = builder.getTextView("userInputView")
     okButton = builder.getButton("okButton")
     tw = TxtWindow(t: userInputView, w: window)
+  var buffer: TextBuffer
+
+  if fileExists("last_session.txt"):
+    let contents = readFile("last_session.txt")
+    buffer = userInputView.getBuffer
+    buffer.setText(contents, contents.len)
+  else:
+    let f = open("last_session.txt", fmWrite)
+    defer: f.close()
 
   window.setApplication(app)
   window.connect("destroy", onQuit, app)
