@@ -21,7 +21,7 @@ nim c -d:danger --threads:on src/Malachite.nim
 
 ## Running Malachite
 
-To run *Malachite*, you must use the `./bin/Malachite` command from the
+To run *Malachite*, you must cd into the `src` directroy and use the `./Malachite` command from the
 terminal.
 
 The instructions on how to use the program itself can be found by hovering the
