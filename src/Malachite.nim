@@ -3,7 +3,7 @@
 import std/[osproc, threadpool, strutils, os,
             strscans, parseutils, strformat, math, terminal], cblakeutils
 import memfiles except open
-import gintro/[gtk, gobject, gio]
+#import gintro/[gtk, gobject, gio]
   
 #[ `Test data for original 30GB file`.
 1..24_633, Ball
@@ -246,58 +246,66 @@ proc malachite(input: string) =
   echo $results, "\n\nThe result of the calculations have been written to the \"results.txt\" file.",
        "\nThank you for using Malachite."
 
-################################
-############# UI ###############
-################################
+#######
+# TUI #
+#######
 
-type
-  TxtWindow = object 
-    t: TextView
-    w: Window
+proc splashScreen() =
+  echo """
+  __  __       _            _     _ _
+ |  \/  | __ _| | __ _  ___| |__ (_) |_ ___
+ | |\/| |/ _` | |/ _` |/ __| '_ \| | __/ _ \
+ | |  | | (_| | | (_| | (__| | | | | ||  __/
+ |_|  |_|\__,_|_|\__,_|\___|_| |_|_|\__\___|
 
-proc onQuit(w: Window, a: Application) =
-  quit(a)
+===========================================
+ MIT License
 
-proc getData(b: Button, v: TxtWindow) =
-  ## Gets the user input from userInputView
-  var 
-    start, ending: TextIter
-    buffer = getBuffer(v.t)
-  buffer.getBounds(start, ending)
-  v.w.destroy()
-  let userInput = getText(buffer, start, ending, true)
-  writeFile("last_session.txt", userInput)
-  # Run the program
-  malachite(userInput)
+ Copyright (c) 2021 domdomdomdomino
+============================================
 
-proc appActivate(app: Application) =
-  let builder = newBuilder()
-  discard builder.addFromFile("ui/ui.glade")
-  let 
-    window: Window = builder.getApplicationWindow("mainWindow")
-    userInputView = builder.getTextView("userInputView")
-    okButton = builder.getButton("okButton")
-    tw = TxtWindow(t: userInputView, w: window)
-  var buffer: TextBuffer
+ Input must be written in this form:
+////////////////////////////////////////////
+ 1..1_000, Ball
+ 1_001..0, Material
+////////////////////////////////////////////
+ The only valid types are 'Ball' and
+ 'Mineral', and '0' is used in the right
+ side of the '..' operand to represent
+ positive infinity. Press enter on an empty
+ line to finish writing input.
 
+ It is your responsability to make sure that
+ ranges you input don't overlap and that
+ they also cover all the IDs.
+"""
   if fileExists("last_session.txt"):
     let contents = readFile("last_session.txt")
-    buffer = userInputView.getBuffer
-    buffer.setText(contents, contents.len)
+    echo """
+############################################
+ Your last input was:
+
+""" & contents & """
+
+############################################
+"""
   else:
     let f = open("last_session.txt", fmWrite)
     defer: f.close()
 
-  window.setApplication(app)
-  window.connect("destroy", onQuit, app)
-  okButton.connect("clicked", getData, tw)
+proc reader(): string =
+  var input: string
+  while true:
+    stdout.write ">>> "
+    let i = readLine(stdin)
 
-  showAll(window)
-
-proc main() =
-  let app = newApplication("org.gtk.malachite")
-  app.connect("activate", appActivate)
-  discard run(app)
+    if i == "":
+      break
+    else:
+      input = input & i & "\n"
+  writefile("last_session.txt", input)
+  return input
 
 when isMainModule:
-  main()
+  splashScreen()
+  malachite(reader())
