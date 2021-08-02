@@ -5,7 +5,9 @@ collision simulations.
 
 ## Compilation
 
-The first step is to install *Nim* using the `sudo apt-get install nim` command on Ubuntu.
+The first step is to install *Nim*.
+
+You need to install `docopt` with `nimble install docopt`.
 
 After installing *Nim*, you must go to the terminal and use the `cd`
 command to get to the `Malachite` directory, then you must input the following
