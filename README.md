@@ -19,5 +19,5 @@ nim c -d:danger --threads:on src/Malachite.nim
 
 ## Running Malachite
 
-To run *Malachite*, you must cd into the `src` directroy and use the `./Malachite` command from the
-terminal.
+To run *Malachite*, you must cd into the `src` directroy and use the `./Malachite <path>` command from the
+terminal, where `<path>` is the path to the file.
