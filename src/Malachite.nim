@@ -3,6 +3,7 @@
 import std/[osproc, threadpool, strutils, os,
             strscans, parseutils, strformat, math, terminal], cblakeutils
 import memfiles except open
+import docopt
 #import gintro/[gtk, gobject, gio]
   
 #[ `Test data for original 30GB file`.
@@ -33,7 +34,7 @@ type
     bbTotal, bmTotal, mmTotal: int
     bbImpact, bmImpact, mmImpact: int
     bbImpactF, bmImpactF, mmImpactF: float
-    abrasion: float
+    abrasion, headerCount: float
 
 proc `$`(m: Material): string =
   result = 
@@ -45,7 +46,21 @@ proc `$`(m: Material): string =
 proc `$`(m: MaterialRange): string =
   result = $m.rng & ", " & $m.matType
 
-proc `$`(a: ForceTotal): string = 
+proc `$`(a: ForceTotal): string =
+  let parsedHeaderCount: string =
+    if floor(a.headerCount / 9) == (a.headerCount / 9):
+      $int(floor(a.headerCount / 9))
+    else:
+      $(a.headerCount / 9) &
+        """
+
+<<FILE WAS NOT READ SUCCESSFULLY.
+  BAD AMOUNT OF HEADERS FOUND:
+    THE AMOUNT OF HEADER LINES FOUND WAS NOT DIVISIBLE BY 9.
+    THIS MEANS THAT THERE IS SOMETHING WRONG WITH THE SIMULATION FILE,
+      OR THAT THE WAY THAT THE HEADERS ARE BEING READ IS WRONG.
+  PLEASE CONTACT DEVELOPER IMMEDIATELY.>>"""
+
   result = 
     "Accumulated values of particles.txt are:\n" &
     "\tBallBall:\n" &
@@ -60,7 +75,8 @@ proc `$`(a: ForceTotal): string =
     "\t\tTotal Contacts: " & $a.mmTotal & '\n' &
     "\t\tImpacts: " & $a.mmImpact & '\n' &
     "\t\tTotal Impact Force: " & $a.mmImpactF & '\n' &
-    "\tTotal Wear: " & $a.abrasion
+    "\tTotal Wear: " & $a.abrasion & "\n\n" &
+    "Number of headers counted: " & parsedHeaderCount & '\n'
 
 proc parseInput(input: string): seq[MaterialRange] =
   for line in input.split('\n'): 
@@ -147,6 +163,7 @@ proc doLines(acc: ptr ForceTotal, c: int, ms: MemSlice, ranges: seq[MaterialRang
     line.setLen s.size
     copyMem line[0].addr, s.data, s.size
     if line.isHeader:
+      acc.headerCount += 1.0
       continue
     
     var j = 0'i8                # fill ids & forces
@@ -207,8 +224,9 @@ proc total(accs: seq[ForceTotal]): ForceTotal =
     result.mmImpact += a.mmImpact
     result.mmImpactF += a.mmImpactF
     result.abrasion += a.abrasion
+    result.headerCount += a.headerCount
 
-proc malachite(input: string) =
+proc malachite(input, path: string) =
   ## Starts the processing based on the input from the user 
   ## and the number of cores of the computer.
 
@@ -225,7 +243,7 @@ proc malachite(input: string) =
   echo "Calculating using ", $nThr, " cores.\n"
 
   var 
-    (mf, parts) = nThr.split("../particles.txt")
+    (mf, parts) = nThr.split(path)
     accs = newSeq[ForceTotal](nThr)
 
   echo "Processing has started, please wait. . ."
@@ -250,8 +268,8 @@ proc malachite(input: string) =
 # TUI #
 #######
 
-proc splashScreen() =
-  echo """
+const
+  splash = """
   __  __       _            _     _ _
  |  \/  | __ _| | __ _  ___| |__ (_) |_ ___
  | |\/| |/ _` | |/ _` |/ __| '_ \| | __/ _ \
@@ -276,11 +294,34 @@ proc splashScreen() =
  line to finish writing input.
 
  It is your responsability to make sure that
- ranges you input don't overlap and that
+ the ranges you input don't overlap and that
  they also cover all the IDs.
+
+ WARNING: Malachite cannot process files
+  with a prime number of lines. Please
+  contact the developer if you get an
+  error in the `doLines` proc regarding
+  `BadFormat`.
 """
-  if fileExists("last_session.txt"):
-    let contents = readFile("last_session.txt")
+  doc = """
+
+Malachite.
+
+Usage:
+  Malachite <file>
+  Malachite -l <file>
+  Malachite [options]
+
+Options:
+  -h --help         Show this screen
+  -l                Loads the input from the last session
+
+"""
+
+proc splashScreen() =
+  echo splash
+  if fileExists(absolutePath("last_session.txt")):
+    let contents = readFile(absolutePath("last_session.txt"))
     echo """
 ############################################
  Your last input was:
@@ -307,5 +348,34 @@ proc reader(): string =
   return input
 
 when isMainModule:
-  splashScreen()
-  malachite(reader())
+  # splashScreen()
+  # malachite(reader())
+  let args = docopt(doc)
+
+  if args["<file>"] and not args["-l"]:
+    let path = $args["<file>"]
+    if path == "nil":
+      echo doc
+    elif not fileExists(path):
+      raise newException(OSError, "'"& path & "' file does not exist.")
+    else:
+      splashScreen()
+      malachite(reader(), path)
+  elif args["-l"]:
+    let path = $args["<file>"]
+    if path == "nil":
+      echo doc
+    elif not fileExists(path):
+      raise newException(OSError, "'"& path & "' file does not exist.")
+    else:
+      if fileExists(absolutePath("last_session.txt")):
+        let ls = readFile(absolutePath("last_session.txt"))
+        if ls != "":
+          malachite(ls, path)
+        else:
+          raise newException(OSError, "The 'last_session.txt' file is empty.")
+      else:
+        raise newException(OSError, "The 'last_session.txt' file does not exist.")
+  else:
+    echo $args
+    echo doc
